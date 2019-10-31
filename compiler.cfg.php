@@ -32,31 +32,22 @@
  *
  */
 
-namespace Skyline\Component\SCSS\Compiler;
+use Skyline\Cache\Compiler\CacheCompiler;
+use Skyline\Compiler\Factory\AbstractExtendedCompilerFactory;
+use Skyline\Compiler\Predef\CreateDirectoriesCompiler;
+use Skyline\Component\SCSS\Compiler\SCSSCompiler;
 
-use Skyline\Compiler\AbstractCompiler;
-use Skyline\Compiler\CompilerContext;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
-
-class SCSSCompiler extends AbstractCompiler
-{
-    private $cacheAdapter;
-
-    /**
-     * SCSSCompiler constructor.
-     * @param string $compilerID
-     * @param $cacheDirectoryName
-     */
-    public function __construct(string $compilerID, $cacheDirectoryName)
-    {
-        parent::__construct($compilerID);
-        $this->cacheAdapter = new FilesystemAdapter('', 0, $cacheDirectoryName);
-    }
-
-    public function compile(CompilerContext $context)
-    {
-        foreach($context->getSourceCodeManager()->yieldSourceFiles('/^components\.cfg\.php/i') as $component) {
-
-        }
-    }
-}
+return [
+    'scss-compiler' => [
+        AbstractExtendedCompilerFactory::COMPILER_CLASS_KEY                            => SCSSCompiler::class,
+        AbstractExtendedCompilerFactory::COMPILER_ARGUMENTS_KEY => [
+            'cacheDirectoryName' => [
+                CacheCompiler::CACHE_DIRECTORY_NAME
+            ]
+        ],
+        AbstractExtendedCompilerFactory::COMPILER_DEPENDENCIES_KEY => [
+            'cache-compiler',
+            'components-config'
+        ]
+    ]
+];

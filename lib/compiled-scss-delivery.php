@@ -32,31 +32,4 @@
  *
  */
 
-namespace Skyline\Component\SCSS\Compiler;
-
-use Skyline\Compiler\AbstractCompiler;
-use Skyline\Compiler\CompilerContext;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
-
-class SCSSCompiler extends AbstractCompiler
-{
-    private $cacheAdapter;
-
-    /**
-     * SCSSCompiler constructor.
-     * @param string $compilerID
-     * @param $cacheDirectoryName
-     */
-    public function __construct(string $compilerID, $cacheDirectoryName)
-    {
-        parent::__construct($compilerID);
-        $this->cacheAdapter = new FilesystemAdapter('', 0, $cacheDirectoryName);
-    }
-
-    public function compile(CompilerContext $context)
-    {
-        foreach($context->getSourceCodeManager()->yieldSourceFiles('/^components\.cfg\.php/i') as $component) {
-
-        }
-    }
-}
+echo "OK";

@@ -34,13 +34,33 @@
 
 namespace Skyline\Component\SCSS;
 
+use Skyline\Compiler\CompilerContext;
 use Skyline\Component\Config\CSSComponent;
 use Skyline\HTML\Head\LinkCSS;
 
 class SCSSComponent extends CSSComponent
 {
-    public function __construct(string $link, string $media = LinkCSS::MEDIA_ALL, string $integrity = NULL, string $crossOrigin = NULL, string $targetFileName = NULL)
+    const OPTION_CROSS_ORIGIN = 'cross-origin';
+    const OPTION_INPUT_FILES = 'input-files';
+    const OPTION_LIBRARY_MAPPING = 'library-mapping';
+
+    /** @var array */
+    private $options;
+
+    public function __construct(string $link, string $media = LinkCSS::MEDIA_ALL, array $options = [])
     {
-        parent::__construct($link, $media, $integrity, $crossOrigin, $targetFileName);
+        $ctx = CompilerContext::getCurrentCompiler();
+        parent::__construct($link, $media, NULL, $options[ static::OPTION_CROSS_ORIGIN ] ?? 'anonymous', $ctx->getRelativeProjectPath( __DIR__ . "/../lib/compiled-scss-delivery.php" ));
+        $this->options = $options;
+    }
+
+    /**
+     * The options are retrieved by the scss compiler to compile out CSS.
+     *
+     * @return array
+     */
+    public function getOptions(): array
+    {
+        return $this->options;
     }
 }
