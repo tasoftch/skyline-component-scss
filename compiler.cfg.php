@@ -32,9 +32,8 @@
  *
  */
 
-use Skyline\Cache\Compiler\CacheCompiler;
+use Skyline\Compiler\CompilerConfiguration;
 use Skyline\Compiler\Factory\AbstractExtendedCompilerFactory;
-use Skyline\Compiler\Predef\CreateDirectoriesCompiler;
 use Skyline\Component\SCSS\Compiler\SCSSCompiler;
 
 return [
@@ -42,7 +41,7 @@ return [
         AbstractExtendedCompilerFactory::COMPILER_CLASS_KEY                            => SCSSCompiler::class,
         AbstractExtendedCompilerFactory::COMPILER_ARGUMENTS_KEY => [
             'cacheDirectoryName' => [
-                CacheCompiler::CACHE_DIRECTORY_NAME
+                CompilerConfiguration::get([], CompilerConfiguration::SKYLINE_DIR_CACHE)
             ]
         ],
         AbstractExtendedCompilerFactory::COMPILER_DEPENDENCIES_KEY => [
