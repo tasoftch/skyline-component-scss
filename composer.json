@@ -15,8 +15,10 @@
   },
   "require" : {
     "php": "^7.2",
+    "skyline/compiler": "dev-master",
     "skyline/direct-components": "dev-master",
-    "leafo/scssphp": "dev-master"
+    "leafo/scssphp": "dev-master",
+    "skyline/cache": "dev-master"
   },
   "require-dev": {
   }
