@@ -32,4 +32,10 @@
  *
  */
 
-echo "OK";
+header("Content-Type: text/css");
+
+$uri = md5(  $_SERVER["REQUEST_URI"] );
+
+$path = SkyGetPath("$(/)/Cache/scss_cache/$uri.css");
+if($path)
+    readfile($path);

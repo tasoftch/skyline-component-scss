@@ -34,6 +34,7 @@
 
 namespace Skyline\Component\SCSS;
 
+use Leafo\ScssPhp\Formatter\Compressed;
 use Skyline\Compiler\CompilerContext;
 use Skyline\Component\Config\CSSComponent;
 use Skyline\HTML\Head\LinkCSS;
@@ -41,17 +42,21 @@ use Skyline\HTML\Head\LinkCSS;
 class SCSSComponent extends CSSComponent
 {
     const OPTION_CROSS_ORIGIN = 'cross-origin';
-    const OPTION_INPUT_FILES = 'input-files';
+    const OPTION_INPUT_FILE = 'input-file';
     const OPTION_LIBRARY_MAPPING = 'library-mapping';
 
+    const OPTION_OUTPUT_FORMAT = 'output-format';
+
     /** @var array */
-    private $options;
+    private $options = [
+        self::OPTION_OUTPUT_FORMAT => Compressed::class
+    ];
 
     public function __construct(string $link, string $media = LinkCSS::MEDIA_ALL, array $options = [])
     {
         $ctx = CompilerContext::getCurrentCompiler();
         parent::__construct($link, $media, NULL, $options[ static::OPTION_CROSS_ORIGIN ] ?? 'anonymous', $ctx->getRelativeProjectPath( __DIR__ . "/../lib/compiled-scss-delivery.php" ));
-        $this->options = $options;
+        $this->options = array_merge($this->options, $options);
     }
 
     /**

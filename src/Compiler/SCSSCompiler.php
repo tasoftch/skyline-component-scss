@@ -34,13 +34,19 @@
 
 namespace Skyline\Component\SCSS\Compiler;
 
+use Leafo\ScssPhp\Compiler;
+use Leafo\ScssPhp\Exception\CompilerException;
 use Skyline\Compiler\AbstractCompiler;
+use Skyline\Compiler\CompilerConfiguration;
 use Skyline\Compiler\CompilerContext;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Skyline\Component\SCSS\SCSSComponent;
 
 class SCSSCompiler extends AbstractCompiler
 {
-    private $cacheAdapter;
+    private $dirname;
+    private $cacheDirectory;
+    /** @var Compiler  */
+    private $scssCompiler;
 
     /**
      * SCSSCompiler constructor.
@@ -50,13 +56,94 @@ class SCSSCompiler extends AbstractCompiler
     public function __construct(string $compilerID, $cacheDirectoryName)
     {
         parent::__construct($compilerID);
-        $this->cacheAdapter = new FilesystemAdapter('', 0, $cacheDirectoryName);
+        $this->dirname = $cacheDirectoryName;
+
+        $this->scssCompiler = new Compiler();
     }
 
     public function compile(CompilerContext $context)
     {
-        foreach($context->getSourceCodeManager()->yieldSourceFiles('/^components\.cfg\.php/i') as $component) {
+        $this->cacheDirectory = realpath($context->getSkylineAppDataDirectory() . DIRECTORY_SEPARATOR . $this->dirname);
 
+
+
+        foreach($context->getSourceCodeManager()->yieldSourceFiles('/^components\.cfg\.php/i') as $component) {
+            $this->analyzeContents(require $component);
+        }
+
+        $dir = $context->getSkylineAppDirectory( CompilerConfiguration::SKYLINE_DIR_CONFIG );
+        if(is_file( $f = $dir . DIRECTORY_SEPARATOR . "components.config.php" ))
+            $this->analyzeContents( require $f );
+    }
+
+    private function analyzeContents($content) {
+        foreach($content as $componentName => $elements) {
+            foreach($elements as $elementName => $element) {
+                if($element instanceof SCSSComponent) {
+                    $this->compileComponent($componentName, $elementName, $element);
+                }
+            }
+        }
+    }
+
+    private function compileComponent($componentName, $elementName, SCSSComponent $component) {
+        $options = $component->getOptions();
+        $file = $options[ SCSSComponent::OPTION_INPUT_FILE ] ?? NULL;
+        if(!$file) {
+            trigger_error("SCSS compiler: no input file for component $componentName", E_USER_WARNING);
+        }
+
+        $content = file_get_contents($file);
+
+        $this->scssCompiler->setFormatter( $options[ SCSSComponent::OPTION_OUTPUT_FORMAT ] );
+        try {
+            $this->scssCompiler->setImportPaths([]);
+            $this->scssCompiler->addImportPath( dirname($file) );
+
+            $namespaces = [];
+            foreach(($options[ SCSSComponent::OPTION_LIBRARY_MAPPING ] ?? []) as $mapping => $directory) {
+                if(is_numeric($mapping))
+                    $this->scssCompiler->addImportPath( $directory );
+                else
+                    $namespaces[$mapping] = $directory;
+            }
+
+            $this->scssCompiler->addImportPath(function($path) use ($namespaces, $file) {
+                $mx = explode(":", $path);
+                $filename = array_pop($mx);
+                $namespace = array_pop($mx);
+
+                if($namespace) {
+                    if($lib = $namespaces[ $namespace ] ?? NULL) {
+                        $file = realpath($lib . DIRECTORY_SEPARATOR . $filename . ".scss");
+                        if(!$file)
+                            $file = realpath($lib . DIRECTORY_SEPARATOR . $filename . ".css");
+
+                        if(!$file)
+                            trigger_error("SCSS: @import '$path': Library component $filename not found", E_USER_WARNING);
+
+                        return $file;
+                    } else
+                        trigger_error("SCSS: @import '$path': Library $namespace not found", E_USER_WARNING);
+                } else {
+                    trigger_error("SCSS: @import '$path' could not be resolved", E_USER_WARNING);
+                }
+                return NULL;
+            });
+
+            $result = $this->scssCompiler->compile($content, $file);
+
+            if(!is_dir($cacheDir = "$this->cacheDirectory/scss_cache/"))
+                @mkdir($cacheDir, 0777, true);
+            error_clear_last();
+
+            $f = md5($component->getConfig()['l'] ?? "$componentName:$elementName");
+            file_put_contents($cacheDir . DIRECTORY_SEPARATOR . $f . ".css", $result);
+
+            echo "Compiled: $file\n";
+
+        } catch (CompilerException $exception) {
+            trigger_error($exception->getMessage(), E_USER_ERROR);
         }
     }
 }
